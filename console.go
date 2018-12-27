@@ -2,8 +2,12 @@ package logger
 
 import "os"
 
-type ConsoleLogger struct {
+type BaseLogger struct {
 	level int
+}
+
+type ConsoleLogger struct {
+	BaseLogger
 }
 
 func NewConsoleLogger(level int) (LogInterface, error) {
@@ -31,7 +35,7 @@ func (c *ConsoleLogger) Debug(format string, args ...interface{}) {
 		return
 	}
 
-	writeLog(os.Stdout, LogLevelDebug, format, args...)
+	output(os.Stdout, LogLevelDebug, format, args...)
 }
 
 func (c *ConsoleLogger) Trace(format string, args ...interface{}) {
@@ -39,7 +43,7 @@ func (c *ConsoleLogger) Trace(format string, args ...interface{}) {
 		return
 	}
 
-	writeLog(os.Stdout, LogLevelTrace, format, args...)
+	output(os.Stdout, LogLevelTrace, format, args...)
 }
 
 func (c *ConsoleLogger) Info(format string, args ...interface{}) {
@@ -47,7 +51,7 @@ func (c *ConsoleLogger) Info(format string, args ...interface{}) {
 		return
 	}
 
-	writeLog(os.Stdout, LogLevelInfo, format, args...)
+	output(os.Stdout, LogLevelInfo, format, args...)
 }
 
 func (c *ConsoleLogger) Warn(format string, args ...interface{}) {
@@ -55,7 +59,7 @@ func (c *ConsoleLogger) Warn(format string, args ...interface{}) {
 		return
 	}
 
-	writeLog(os.Stdout, LogLevelWarn, format, args...)
+	output(os.Stdout, LogLevelWarn, format, args...)
 }
 
 func (c *ConsoleLogger) Error(format string, args ...interface{}) {
@@ -63,7 +67,7 @@ func (c *ConsoleLogger) Error(format string, args ...interface{}) {
 		return
 	}
 
-	writeLog(os.Stdout, LogLevelError, format, args...)
+	output(os.Stdout, LogLevelError, format, args...)
 }
 
 func (c *ConsoleLogger) Fatal(format string, args ...interface{}) {
@@ -71,7 +75,7 @@ func (c *ConsoleLogger) Fatal(format string, args ...interface{}) {
 		return
 	}
 
-	writeLog(os.Stdout, LogLevelFatal, format, args...)
+	output(os.Stdout, LogLevelFatal, format, args...)
 }
 
 func (c *ConsoleLogger) Close() {
