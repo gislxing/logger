@@ -70,7 +70,7 @@ func (f *FileLogger) Debug(format string, args ...interface{}) {
 		return
 	}
 
-	fmt.Fprintf(f.infoFile, format+"\n", args...)
+	writeLog(f.infoFile, LogLevelDebug, format, args...)
 }
 
 func (f *FileLogger) Trace(format string, args ...interface{}) {
@@ -78,7 +78,7 @@ func (f *FileLogger) Trace(format string, args ...interface{}) {
 		return
 	}
 
-	fmt.Fprintf(f.infoFile, format+"\n", args...)
+	writeLog(f.infoFile, LogLevelTrace, format, args...)
 }
 
 func (f *FileLogger) Info(format string, args ...interface{}) {
@@ -86,7 +86,7 @@ func (f *FileLogger) Info(format string, args ...interface{}) {
 		return
 	}
 
-	fmt.Fprintf(f.infoFile, format+"\n", args...)
+	writeLog(f.infoFile, LogLevelInfo, format, args...)
 }
 
 func (f *FileLogger) Warn(format string, args ...interface{}) {
@@ -94,7 +94,7 @@ func (f *FileLogger) Warn(format string, args ...interface{}) {
 		return
 	}
 
-	fmt.Fprintf(f.infoFile, format+"\n", args...)
+	writeLog(f.infoFile, LogLevelWarn, format, args...)
 }
 
 func (f *FileLogger) Error(format string, args ...interface{}) {
@@ -102,7 +102,7 @@ func (f *FileLogger) Error(format string, args ...interface{}) {
 		return
 	}
 
-	fmt.Fprintf(f.errFile, format+"\n", args...)
+	writeLog(f.errFile, LogLevelError, format, args...)
 }
 
 func (f *FileLogger) Fatal(format string, args ...interface{}) {
@@ -110,5 +110,5 @@ func (f *FileLogger) Fatal(format string, args ...interface{}) {
 		return
 	}
 
-	fmt.Fprintf(f.errFile, format+"\n", args...)
+	writeLog(f.errFile, LogLevelFatal, format, args...)
 }
