@@ -34,3 +34,8 @@ const (
 	ConsoleModel = iota
 	FileModel
 )
+
+const (
+	// 文件写入数据通道缓存大小
+	CHAN_CACHE_SIZE = 50000
+)

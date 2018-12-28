@@ -12,22 +12,41 @@ type fileLogger struct {
 	logName  string
 	infoFile *os.File
 	errFile  *os.File
+	dataChan chan *fileLogData
+}
+
+type fileLogData struct {
+	log  string
+	file *os.File
 }
 
 func newFileLogger(level int) (logInterface, error) {
 	projectName := getProjectName()
 	logPath := filepath.Join("/var/log/", projectName)
 	log := &fileLogger{
-		logPath: logPath,
-		logName: projectName,
+		logPath:  logPath,
+		logName:  projectName,
+		dataChan: make(chan *fileLogData, CHAN_CACHE_SIZE),
 	}
 
 	log.setLevel(level)
-	log.init()
+	log.createLogFile()
+
+	// 启动写入协程
+	go log.writerToFile()
+
 	return log, nil
 }
 
-func (f *fileLogger) init() {
+// 写入文件
+func (f *fileLogger) writerToFile() {
+	for data := range f.dataChan {
+		fmt.Fprintf(data.file, data.log)
+	}
+}
+
+// 创建日志文件
+func (f *fileLogger) createLogFile() {
 	// 路径不存在则创建
 	if _, err := os.Stat(f.logPath); os.IsNotExist(err) {
 		os.MkdirAll(f.logPath, os.ModePerm)
@@ -72,7 +91,7 @@ func (f *fileLogger) debug(format string, args ...interface{}) {
 		return
 	}
 
-	output(f.infoFile, LogLevelDebug, format, args...)
+	output(f.infoFile, f.dataChan, LogLevelDebug, format, args...)
 }
 
 func (f *fileLogger) trace(format string, args ...interface{}) {
@@ -80,7 +99,7 @@ func (f *fileLogger) trace(format string, args ...interface{}) {
 		return
 	}
 
-	output(f.infoFile, LogLevelTrace, format, args...)
+	output(f.infoFile, f.dataChan, LogLevelTrace, format, args...)
 }
 
 func (f *fileLogger) info(format string, args ...interface{}) {
@@ -88,7 +107,7 @@ func (f *fileLogger) info(format string, args ...interface{}) {
 		return
 	}
 
-	output(f.infoFile, LogLevelInfo, format, args...)
+	output(f.infoFile, f.dataChan, LogLevelInfo, format, args...)
 }
 
 func (f *fileLogger) warn(format string, args ...interface{}) {
@@ -96,7 +115,7 @@ func (f *fileLogger) warn(format string, args ...interface{}) {
 		return
 	}
 
-	output(f.infoFile, LogLevelWarn, format, args...)
+	output(f.infoFile, f.dataChan, LogLevelWarn, format, args...)
 }
 
 func (f *fileLogger) error(format string, args ...interface{}) {
@@ -104,7 +123,7 @@ func (f *fileLogger) error(format string, args ...interface{}) {
 		return
 	}
 
-	output(f.errFile, LogLevelError, format, args...)
+	output(f.errFile, f.dataChan, LogLevelError, format, args...)
 }
 
 func (f *fileLogger) fatal(format string, args ...interface{}) {
@@ -112,5 +131,5 @@ func (f *fileLogger) fatal(format string, args ...interface{}) {
 		return
 	}
 
-	output(f.errFile, LogLevelFatal, format, args...)
+	output(f.errFile, f.dataChan, LogLevelFatal, format, args...)
 }

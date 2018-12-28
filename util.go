@@ -14,6 +14,9 @@ var mu sync.Mutex
 
 // 获取程序运行过程中日志调用的文件名称、函数名称你、行号
 func getFuncCallInfo() (fileName, funcName string, lineNo int) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	pc, file, line, ok := runtime.Caller(4)
 	if ok {
 		fileName = file
@@ -24,12 +27,10 @@ func getFuncCallInfo() (fileName, funcName string, lineNo int) {
 	return
 }
 
-// 将日志输出到文件
+// 输出日志输出
 // 输出格式: 时间 [日志级别] 文件名称:方法名称 行号 - 用户日志
-func output(file *os.File, level int, format string, args ...interface{}) {
-	mu.Lock()
-	defer mu.Unlock()
-
+// 如果 dataChan = nil 则直接输出到 file, 否则将日志发送到 dataChan
+func output(file *os.File, dataChan chan *fileLogData, level int, format string, args ...interface{}) {
 	timeStr := time.Now().Format("2006-01-02 15:04:05.999")
 	levelStr := getLogLevel(level)
 	fileName, funcName, lineNo := getFuncCallInfo()
@@ -37,7 +38,22 @@ func output(file *os.File, level int, format string, args ...interface{}) {
 	funcName = filepath.Base(funcName)
 
 	msg := fmt.Sprintf(format, args...)
-	fmt.Fprintf(file, "%s [%5s] %s:%s %d - %s\n", timeStr, levelStr, fileName, funcName, lineNo, msg)
+
+	logMsg := fmt.Sprintf("%s [%5s] %s:%s %d - %s\n", timeStr, levelStr, fileName, funcName, lineNo, msg)
+	logData := &fileLogData{
+		log:  logMsg,
+		file: file,
+	}
+
+	if dataChan != nil {
+		select {
+		case dataChan <- logData:
+		default:
+		}
+	} else {
+		fmt.Fprintf(file, logMsg)
+	}
+
 }
 
 // 获取项目名称
