@@ -1,23 +1,15 @@
 package logger
 
+import (
+	"reflect"
+)
+
 var (
-	log      logInterface
-	logLevel int
-	logModel int
+	log logInterface
 )
 
 func init() {
-	createLog()
-}
-
-// 创建日志对象
-func createLog() {
-	switch logModel {
-	case ConsoleModel:
-		log, _ = newConsoleLogger(logLevel)
-	case FileModel:
-		log, _ = newFileLogger(logLevel)
-	}
+	log, _ = newConsoleLogger(LogLevelDebug)
 }
 
 // 设置日志输出级别，如果不设置则默认为 info 级别
@@ -29,14 +21,22 @@ func SetLevel(level int) {
 	log.setLevel(level)
 }
 
-// 设置日志输出模式（文件模式、控制台模式）
+// 设置日志输出模式（文件模式 FileModel、控制台模式 ConsoleModel）
 func SetLogModel(model int) {
-	if model < ConsoleModel || model > FileModel {
-		logModel = ConsoleModel
+	switch model {
+	case ConsoleModel:
+		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
+			log, _ = newConsoleLogger(LogLevelDebug)
+		}
+	case FileModel:
+		if reflect.TypeOf(log) != reflect.TypeOf(&fileLogger{}) {
+			log, _ = newFileLogger(LogLevelDebug)
+		}
+	default:
+		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
+			log, _ = newConsoleLogger(LogLevelDebug)
+		}
 	}
-
-	logModel = model
-	createLog()
 }
 
 func Debug(format string, args ...interface{}) {
