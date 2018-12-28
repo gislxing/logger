@@ -2,27 +2,27 @@ package logger
 
 import "os"
 
-type BaseLogger struct {
+type baseLogger struct {
 	level int
 }
 
-type ConsoleLogger struct {
-	BaseLogger
+type consoleLogger struct {
+	baseLogger
 }
 
-func NewConsoleLogger(level int) (LogInterface, error) {
-	log := &ConsoleLogger{}
+func newConsoleLogger(level int) (logInterface, error) {
+	log := &consoleLogger{}
 
-	log.SetLevel(level)
+	log.setLevel(level)
 	log.init()
 	return log, nil
 }
 
-func (c *ConsoleLogger) init() {
+func (c *consoleLogger) init() {
 
 }
 
-func (c *ConsoleLogger) SetLevel(level int) {
+func (c *consoleLogger) setLevel(level int) {
 	if level < LogLevelDebug || level > LogLevelFatal {
 		c.level = LogLevelInfo
 	}
@@ -30,7 +30,7 @@ func (c *ConsoleLogger) SetLevel(level int) {
 	c.level = level
 }
 
-func (c *ConsoleLogger) Debug(format string, args ...interface{}) {
+func (c *consoleLogger) debug(format string, args ...interface{}) {
 	if c.level > LogLevelDebug {
 		return
 	}
@@ -38,7 +38,7 @@ func (c *ConsoleLogger) Debug(format string, args ...interface{}) {
 	output(os.Stdout, LogLevelDebug, format, args...)
 }
 
-func (c *ConsoleLogger) Trace(format string, args ...interface{}) {
+func (c *consoleLogger) trace(format string, args ...interface{}) {
 	if c.level > LogLevelTrace {
 		return
 	}
@@ -46,7 +46,7 @@ func (c *ConsoleLogger) Trace(format string, args ...interface{}) {
 	output(os.Stdout, LogLevelTrace, format, args...)
 }
 
-func (c *ConsoleLogger) Info(format string, args ...interface{}) {
+func (c *consoleLogger) info(format string, args ...interface{}) {
 	if c.level > LogLevelInfo {
 		return
 	}
@@ -54,7 +54,7 @@ func (c *ConsoleLogger) Info(format string, args ...interface{}) {
 	output(os.Stdout, LogLevelInfo, format, args...)
 }
 
-func (c *ConsoleLogger) Warn(format string, args ...interface{}) {
+func (c *consoleLogger) warn(format string, args ...interface{}) {
 	if c.level > LogLevelWarn {
 		return
 	}
@@ -62,7 +62,7 @@ func (c *ConsoleLogger) Warn(format string, args ...interface{}) {
 	output(os.Stdout, LogLevelWarn, format, args...)
 }
 
-func (c *ConsoleLogger) Error(format string, args ...interface{}) {
+func (c *consoleLogger) error(format string, args ...interface{}) {
 	if c.level > LogLevelError {
 		return
 	}
@@ -70,7 +70,7 @@ func (c *ConsoleLogger) Error(format string, args ...interface{}) {
 	output(os.Stdout, LogLevelError, format, args...)
 }
 
-func (c *ConsoleLogger) Fatal(format string, args ...interface{}) {
+func (c *consoleLogger) fatal(format string, args ...interface{}) {
 	if c.level > LogLevelFatal {
 		return
 	}
@@ -78,6 +78,6 @@ func (c *ConsoleLogger) Fatal(format string, args ...interface{}) {
 	output(os.Stdout, LogLevelFatal, format, args...)
 }
 
-func (c *ConsoleLogger) Close() {
+func (c *consoleLogger) close() {
 
 }

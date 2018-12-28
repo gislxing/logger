@@ -28,3 +28,9 @@ func getLogLevel(level int) string {
 		return "UNKNOWN"
 	}
 }
+
+// 日志输出模式
+const (
+	ConsoleModel = iota
+	FileModel
+)
