@@ -39,6 +39,12 @@ func SetLogModel(model int) {
 	}
 }
 
+// 设置日志文件最大大小（字节）,如果超过这个值则切分日志
+// 如果不设置，默认日志切分大小是 100MB
+func SetLogFileMaxSize(size int64) {
+	log.setLogFileMaxSize(size)
+}
+
 func Debug(format string, args ...interface{}) {
 	log.debug(format, args...)
 }
