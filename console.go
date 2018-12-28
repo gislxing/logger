@@ -17,6 +17,10 @@ func newConsoleLogger(level int) (logInterface, error) {
 	return log, nil
 }
 
+func (c *consoleLogger) setLogFileMaxSize(size int64) {
+
+}
+
 func (c *consoleLogger) setLevel(level int) {
 	if level < LogLevelDebug || level > LogLevelFatal {
 		c.level = LogLevelInfo

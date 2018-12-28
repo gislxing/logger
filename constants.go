@@ -37,5 +37,11 @@ const (
 
 const (
 	// 文件写入数据通道缓存大小
-	CHAN_CACHE_SIZE = 50000
+	chanCacheSize = 50000
+
+	// 1MB
+	MB int64 = 1048576
+
+	// 默认日志切分大小
+	splitFileSize = 100 * MB
 )
