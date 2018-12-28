@@ -7,25 +7,26 @@ import (
 )
 
 func TestFileLogger(t *testing.T) {
-	logFilePath := "/var/log/logger"
-	logFileName := "logger"
-	log, err := NewFileLogger(LogLevelDebug, logFilePath, logFileName)
+	projectName := getProjectName()
+	logPath := filepath.Join("/var/log/", projectName)
+
+	log, err := newFileLogger(LogLevelDebug)
 	defer func() {
-		log.Close()
-		os.RemoveAll(logFilePath)
+		log.close()
+		os.RemoveAll(logPath)
 	}()
 	if err != nil {
 		t.Errorf("创建日志对象失败: %v", err)
 	}
 
-	log.Debug("test file debug level log")
-	log.Trace("test file trace level log")
-	log.Info("test file info level log")
-	log.Warn("test file warn level log")
-	log.Error("test file error level log")
-	log.Fatal("test file fatal level log")
+	log.debug("test file debug level log")
+	log.trace("test file trace level log")
+	log.info("test file info level log")
+	log.warn("test file warn level log")
+	log.error("test file error level log")
+	log.fatal("test file fatal level log")
 
-	filePath := filepath.Join(logFilePath, logFileName) + ".log"
+	filePath := filepath.Join(logPath, projectName) + ".log"
 	fileInfo, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		t.Errorf("创建日志文件失败: %v", err)
@@ -37,15 +38,15 @@ func TestFileLogger(t *testing.T) {
 }
 
 func TestConsoleLogger(t *testing.T) {
-	log, err := NewConsoleLogger(LogLevelDebug)
+	log, err := newConsoleLogger(LogLevelDebug)
 	if err != nil {
 		t.Errorf("创建控制台日志错误: %v", err)
 	}
 
-	log.Debug("test debug level log")
-	log.Trace("test trace level log")
-	log.Info("test info level log")
-	log.Warn("test warn level log")
-	log.Error("test error level log")
-	log.Fatal("test fatal level log")
+	log.debug("test debug level log")
+	log.trace("test trace level log")
+	log.info("test info level log")
+	log.warn("test warn level log")
+	log.error("test error level log")
+	log.fatal("test fatal level log")
 }

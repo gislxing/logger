@@ -6,26 +6,28 @@ import (
 	"path/filepath"
 )
 
-type FileLogger struct {
-	BaseLogger
+type fileLogger struct {
+	baseLogger
 	logPath  string
 	logName  string
 	infoFile *os.File
 	errFile  *os.File
 }
 
-func NewFileLogger(level int, logPath, logName string) (LogInterface, error) {
-	log := &FileLogger{
+func newFileLogger(level int) (logInterface, error) {
+	projectName := getProjectName()
+	logPath := filepath.Join("/var/log/", projectName)
+	log := &fileLogger{
 		logPath: logPath,
-		logName: logName,
+		logName: projectName,
 	}
 
-	log.SetLevel(level)
+	log.setLevel(level)
 	log.init()
 	return log, nil
 }
 
-func (f *FileLogger) init() {
+func (f *fileLogger) init() {
 	// 路径不存在则创建
 	if _, err := os.Stat(f.logPath); os.IsNotExist(err) {
 		os.MkdirAll(f.logPath, os.ModePerm)
@@ -52,7 +54,7 @@ func (f *FileLogger) init() {
 	f.errFile = file
 }
 
-func (f *FileLogger) SetLevel(level int) {
+func (f *fileLogger) setLevel(level int) {
 	if level < LogLevelDebug || level > LogLevelFatal {
 		f.level = LogLevelInfo
 	}
@@ -60,12 +62,12 @@ func (f *FileLogger) SetLevel(level int) {
 	f.level = level
 }
 
-func (f *FileLogger) Close() {
+func (f *fileLogger) close() {
 	f.infoFile.Close()
 	f.errFile.Close()
 }
 
-func (f *FileLogger) Debug(format string, args ...interface{}) {
+func (f *fileLogger) debug(format string, args ...interface{}) {
 	if f.level > LogLevelDebug {
 		return
 	}
@@ -73,7 +75,7 @@ func (f *FileLogger) Debug(format string, args ...interface{}) {
 	output(f.infoFile, LogLevelDebug, format, args...)
 }
 
-func (f *FileLogger) Trace(format string, args ...interface{}) {
+func (f *fileLogger) trace(format string, args ...interface{}) {
 	if f.level > LogLevelTrace {
 		return
 	}
@@ -81,7 +83,7 @@ func (f *FileLogger) Trace(format string, args ...interface{}) {
 	output(f.infoFile, LogLevelTrace, format, args...)
 }
 
-func (f *FileLogger) Info(format string, args ...interface{}) {
+func (f *fileLogger) info(format string, args ...interface{}) {
 	if f.level > LogLevelInfo {
 		return
 	}
@@ -89,7 +91,7 @@ func (f *FileLogger) Info(format string, args ...interface{}) {
 	output(f.infoFile, LogLevelInfo, format, args...)
 }
 
-func (f *FileLogger) Warn(format string, args ...interface{}) {
+func (f *fileLogger) warn(format string, args ...interface{}) {
 	if f.level > LogLevelWarn {
 		return
 	}
@@ -97,7 +99,7 @@ func (f *FileLogger) Warn(format string, args ...interface{}) {
 	output(f.infoFile, LogLevelWarn, format, args...)
 }
 
-func (f *FileLogger) Error(format string, args ...interface{}) {
+func (f *fileLogger) error(format string, args ...interface{}) {
 	if f.level > LogLevelError {
 		return
 	}
@@ -105,7 +107,7 @@ func (f *FileLogger) Error(format string, args ...interface{}) {
 	output(f.errFile, LogLevelError, format, args...)
 }
 
-func (f *FileLogger) Fatal(format string, args ...interface{}) {
+func (f *fileLogger) fatal(format string, args ...interface{}) {
 	if f.level > LogLevelFatal {
 		return
 	}

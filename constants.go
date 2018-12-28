@@ -31,6 +31,6 @@ func getLogLevel(level int) string {
 
 // 日志输出模式
 const (
-	consoleModel = iota
-	fileModel
+	ConsoleModel = iota
+	FileModel
 )
