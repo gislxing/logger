@@ -2,27 +2,27 @@ package logger
 
 // 常量-日志级别
 const (
-	LogLevelDebug = iota
-	LogLevelTrace
-	LogLevelInfo
-	LogLevelWarn
-	LogLevelError
-	LogLevelFatal
+	DEBUG = iota
+	TRACE
+	INFO
+	WARN
+	ERROR
+	FATAL
 )
 
 func getLogLevel(level int) string {
 	switch level {
-	case LogLevelDebug:
+	case DEBUG:
 		return "DEBUG"
-	case LogLevelTrace:
+	case TRACE:
 		return "TRACE"
-	case LogLevelInfo:
+	case INFO:
 		return "INFO"
-	case LogLevelWarn:
+	case WARN:
 		return "WARN"
-	case LogLevelError:
+	case ERROR:
 		return "ERROR"
-	case LogLevelFatal:
+	case FATAL:
 		return "FATAL"
 	default:
 		return "UNKNOWN"

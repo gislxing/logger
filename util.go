@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -62,4 +63,12 @@ func getProjectName() string {
 	name = filepath.Base(name)
 	index := strings.LastIndex(name, ".")
 	return name[:index]
+}
+
+// 获得当前日志的保存路径
+func getCurrentLogPath() string {
+	now := time.Now()
+	projectName := getProjectName()
+	return string(filepath.Separator) +
+		filepath.Join("var", "log", projectName, strconv.Itoa(now.Year()), fmt.Sprintf("%d", now.Month()))
 }

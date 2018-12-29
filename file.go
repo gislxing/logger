@@ -25,7 +25,7 @@ type fileLogData struct {
 
 func newFileLogger(level int) (logInterface, error) {
 	projectName := getProjectName()
-	logPath := filepath.Join("/var/log/", projectName)
+	logPath := getCurrentLogPath()
 	log := &fileLogger{
 		logPath:        logPath,
 		logName:        projectName,
@@ -89,8 +89,8 @@ func (f *fileLogger) createLogFile() {
 }
 
 func (f *fileLogger) setLevel(level int) {
-	if level < LogLevelDebug || level > LogLevelFatal {
-		f.level = LogLevelInfo
+	if level < DEBUG || level > FATAL {
+		f.level = INFO
 	}
 
 	f.level = level
@@ -102,51 +102,51 @@ func (f *fileLogger) close() {
 }
 
 func (f *fileLogger) debug(format string, args ...interface{}) {
-	if f.level > LogLevelDebug {
+	if f.level > DEBUG {
 		return
 	}
 
-	output(f.infoFile, f.dataChan, LogLevelDebug, format, args...)
+	output(f.infoFile, f.dataChan, DEBUG, format, args...)
 }
 
 func (f *fileLogger) trace(format string, args ...interface{}) {
-	if f.level > LogLevelTrace {
+	if f.level > TRACE {
 		return
 	}
 
-	output(f.infoFile, f.dataChan, LogLevelTrace, format, args...)
+	output(f.infoFile, f.dataChan, TRACE, format, args...)
 }
 
 func (f *fileLogger) info(format string, args ...interface{}) {
-	if f.level > LogLevelInfo {
+	if f.level > INFO {
 		return
 	}
 
-	output(f.infoFile, f.dataChan, LogLevelInfo, format, args...)
+	output(f.infoFile, f.dataChan, INFO, format, args...)
 }
 
 func (f *fileLogger) warn(format string, args ...interface{}) {
-	if f.level > LogLevelWarn {
+	if f.level > WARN {
 		return
 	}
 
-	output(f.infoFile, f.dataChan, LogLevelWarn, format, args...)
+	output(f.infoFile, f.dataChan, WARN, format, args...)
 }
 
 func (f *fileLogger) error(format string, args ...interface{}) {
-	if f.level > LogLevelError {
+	if f.level > ERROR {
 		return
 	}
 
-	output(f.errFile, f.dataChan, LogLevelError, format, args...)
+	output(f.errFile, f.dataChan, ERROR, format, args...)
 }
 
 func (f *fileLogger) fatal(format string, args ...interface{}) {
-	if f.level > LogLevelFatal {
+	if f.level > FATAL {
 		return
 	}
 
-	output(f.errFile, f.dataChan, LogLevelFatal, format, args...)
+	output(f.errFile, f.dataChan, FATAL, format, args...)
 }
 
 func (f *fileLogger) splitLogFile(data *fileLogData) {

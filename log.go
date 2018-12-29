@@ -9,13 +9,13 @@ var (
 )
 
 func init() {
-	log, _ = newConsoleLogger(LogLevelDebug)
+	log, _ = newConsoleLogger(DEBUG)
 }
 
 // 设置日志输出级别，如果不设置则默认为 info 级别
-func SetLevel(level int) {
-	if level < LogLevelDebug || level > LogLevelFatal {
-		log.setLevel(LogLevelDebug)
+func SetLogLevel(level int) {
+	if level < DEBUG || level > FATAL {
+		log.setLevel(DEBUG)
 	}
 
 	log.setLevel(level)
@@ -26,15 +26,15 @@ func SetLogModel(model int) {
 	switch model {
 	case ConsoleModel:
 		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
-			log, _ = newConsoleLogger(LogLevelDebug)
+			log, _ = newConsoleLogger(DEBUG)
 		}
 	case FileModel:
 		if reflect.TypeOf(log) != reflect.TypeOf(&fileLogger{}) {
-			log, _ = newFileLogger(LogLevelDebug)
+			log, _ = newFileLogger(DEBUG)
 		}
 	default:
 		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
-			log, _ = newConsoleLogger(LogLevelDebug)
+			log, _ = newConsoleLogger(DEBUG)
 		}
 	}
 }
