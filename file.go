@@ -10,8 +10,8 @@ import (
 
 type fileLogger struct {
 	baseLogger
-	logPath        string            // 日志文件路径
-	logName        string            // 日志问价名称
+	//logPath        string            // 日志文件路径
+	//logName        string            // 日志问价名称
 	infoFile       *os.File          // info及以下级别写入的文件
 	errFile        *os.File          // error及以上级别写入的文件
 	dataChan       chan *fileLogData // 写入文件通道
@@ -24,11 +24,7 @@ type fileLogData struct {
 }
 
 func newFileLogger(level int) (logInterface, error) {
-	projectName := getProjectName()
-	logPath := getCurrentLogPath()
 	log := &fileLogger{
-		logPath:        logPath,
-		logName:        projectName,
 		dataChan:       make(chan *fileLogData, chanCacheSize),
 		logFileMaxSize: splitFileSize,
 	}
@@ -58,13 +54,16 @@ func (f *fileLogger) writerToFile() {
 
 // 创建日志文件
 func (f *fileLogger) createLogFile() {
+	projectName := getProjectName()
+	logPath := getCurrentLogPath()
+
 	// 路径不存在则创建
-	if _, err := os.Stat(f.logPath); os.IsNotExist(err) {
-		os.MkdirAll(f.logPath, os.ModePerm)
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		os.MkdirAll(logPath, os.ModePerm)
 	}
 
 	// 打开info级别日志文件（写入debug、trace、info、warn日志）
-	logFilePath := filepath.Join(f.logPath, f.logName)
+	logFilePath := filepath.Join(logPath, projectName)
 	logFilePath = fmt.Sprintf("%s%s", logFilePath, ".log")
 
 	// 日志 info 文件不存在则创建
@@ -76,7 +75,7 @@ func (f *fileLogger) createLogFile() {
 	f.infoFile = file
 
 	// 打开error级别日志文件(写入error、fatal日志)
-	logFilePath = filepath.Join(f.logPath, f.logName)
+	logFilePath = filepath.Join(logPath, projectName)
 	logFilePath = fmt.Sprintf("%s%s", logFilePath, "-error.log")
 
 	// 日志 error 文件不存在则创建
@@ -153,13 +152,22 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 	// 检查文件大小
 	fileInfo, err := data.file.Stat()
 	if err != nil {
+		f.createLogFile()
 		return
 	}
 
-	// 切分日志
+	// 检查是否需要重新创建日志目录和文件
+	oldPath := data.file.Name()
+	currentLogPath := filepath.Dir(oldPath)
+
+	if currentLogPath != getCurrentLogPath() {
+		f.createLogFile()
+		return
+	}
+
+	// 按照文件大小切分日志
 	currentFileSize := fileInfo.Size()
 	if f.logFileMaxSize <= currentFileSize {
-		oldPath := data.file.Name()
 		timeStr := time.Now().Format("20060102150405")
 		newPath := strings.Replace(oldPath, ".log", "-"+timeStr+".log", -1)
 		f.close()
