@@ -26,15 +26,24 @@ func SetLogModel(model int) {
 	switch model {
 	case ConsoleModel:
 		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
+			logLevel, logFileMaxSize := log.getLogParam()
 			log, _ = newConsoleLogger(DEBUG)
+			log.setLevel(logLevel)
+			log.setLogFileMaxSize(logFileMaxSize)
 		}
 	case FileModel:
 		if reflect.TypeOf(log) != reflect.TypeOf(&fileLogger{}) {
+			logLevel, logFileMaxSize := log.getLogParam()
 			log, _ = newFileLogger(DEBUG)
+			log.setLevel(logLevel)
+			log.setLogFileMaxSize(logFileMaxSize)
 		}
 	default:
 		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
+			logLevel, logFileMaxSize := log.getLogParam()
 			log, _ = newConsoleLogger(DEBUG)
+			log.setLevel(logLevel)
+			log.setLogFileMaxSize(logFileMaxSize)
 		}
 	}
 }

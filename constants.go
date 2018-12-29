@@ -42,6 +42,15 @@ const (
 	// 1MB
 	MB int64 = 1048576
 
+	// 1GB
+	GB = 1024 * MB
+
 	// 默认日志切分大小
 	splitFileSize = 100 * MB
+
+	// 默认日志总大小
+	logTotalSize = 10 * GB
+
+	// 默认清理日志百分比
+	perDeleteLog = 0.3
 )

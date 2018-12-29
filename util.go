@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -65,10 +66,51 @@ func getProjectName() string {
 	return name[:index]
 }
 
-// 获得当前日志的保存路径
-func getCurrentLogPath() string {
+// 获得当前日志的保存路径,
+// isLogRootDir 是否要获取完整日志目录,
+// true：返回日志根目录，false：返回完整日志路径
+func getCurrentLogPath(isLogRootDir bool) string {
 	now := time.Now()
 	projectName := getProjectName()
+
+	if isLogRootDir {
+		return string(filepath.Separator) + filepath.Join("var", "log", projectName)
+	}
+
 	return string(filepath.Separator) +
 		filepath.Join("var", "log", projectName, strconv.Itoa(now.Year()), fmt.Sprintf("%d", now.Month()))
+}
+
+// 检查文件或者路径是否存在
+// true：存在，false：不存在
+func isExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
+// 获取路径或者文件大小（单位：字节）
+func getPathSize(path string) (size int64) {
+	if path == "" || !isExists(path) {
+		return
+	}
+
+	infos, err := ioutil.ReadDir(path)
+	if err != nil {
+		fileInfo, err := os.Stat(path)
+		if err != nil {
+			return
+		}
+
+		return fileInfo.Size()
+	}
+
+	for _, value := range infos {
+		if value.IsDir() {
+			size += getPathSize(filepath.Join(path, value.Name()))
+		} else {
+			size += value.Size()
+		}
+	}
+
+	return
 }

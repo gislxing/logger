@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,12 +11,10 @@ import (
 
 type fileLogger struct {
 	baseLogger
-	//logPath        string            // 日志文件路径
-	//logName        string            // 日志问价名称
-	infoFile       *os.File          // info及以下级别写入的文件
-	errFile        *os.File          // error及以上级别写入的文件
-	dataChan       chan *fileLogData // 写入文件通道
-	logFileMaxSize int64             // 默认日志文件最大值（单位: 字节）
+	infoFile     *os.File          // info及以下级别写入的文件
+	errFile      *os.File          // error及以上级别写入的文件
+	dataChan     chan *fileLogData // 写入文件通道
+	logTotalSize int64             // 日志总大小，大于该值则清理 30%
 }
 
 type fileLogData struct {
@@ -25,8 +24,11 @@ type fileLogData struct {
 
 func newFileLogger(level int) (logInterface, error) {
 	log := &fileLogger{
-		dataChan:       make(chan *fileLogData, chanCacheSize),
-		logFileMaxSize: splitFileSize,
+		dataChan:     make(chan *fileLogData, chanCacheSize),
+		logTotalSize: logTotalSize,
+		baseLogger: baseLogger{
+			logFileMaxSize: splitFileSize,
+		},
 	}
 
 	log.setLevel(level)
@@ -38,7 +40,16 @@ func newFileLogger(level int) (logInterface, error) {
 	return log, nil
 }
 
+func (f *fileLogger) getLogParam() (logLevel int, logFileMaxSize int64) {
+	logLevel, logFileMaxSize = f.level, f.logFileMaxSize
+	return
+}
+
 func (f *fileLogger) setLogFileMaxSize(size int64) {
+	if size <= 0 {
+		size = splitFileSize
+	}
+
 	f.logFileMaxSize = size
 }
 
@@ -55,7 +66,7 @@ func (f *fileLogger) writerToFile() {
 // 创建日志文件
 func (f *fileLogger) createLogFile() {
 	projectName := getProjectName()
-	logPath := getCurrentLogPath()
+	logPath := getCurrentLogPath(false)
 
 	// 路径不存在则创建
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
@@ -160,7 +171,7 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 	oldPath := data.file.Name()
 	currentLogPath := filepath.Dir(oldPath)
 
-	if currentLogPath != getCurrentLogPath() {
+	if currentLogPath != getCurrentLogPath(false) {
 		f.createLogFile()
 		return
 	}
@@ -175,6 +186,50 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 
 		// 重新创建日志文件
 		f.createLogFile()
+
+		// 清理日志
+		go f.clearLogFile()
 	}
 
+}
+
+// 清理日志
+// 日志总大小大于设定值后开始清理旧日志（清理30%总量最大值）
+func (f *fileLogger) clearLogFile() {
+	// 获取日志总大小
+	rootPath := getCurrentLogPath(true)
+	totalSize := getPathSize(rootPath)
+
+	// 当前日志小于临界值不清理
+	if totalSize < f.logTotalSize {
+		return
+	}
+
+	// 从最早的日志开始清理
+	f.delete(rootPath, float64(f.logTotalSize)*perDeleteLog)
+}
+
+func (f *fileLogger) delete(rootPath string, delSize float64) {
+	if !isExists(rootPath) {
+		return
+	}
+
+	infos, err := ioutil.ReadDir(rootPath)
+	if err != nil {
+		return
+	}
+
+	for _, value := range infos {
+		if value.IsDir() {
+			f.delete(filepath.Join(rootPath, value.Name()), delSize)
+		} else {
+			// 如果当前文件小于 delSize 则删除
+			path := filepath.Join(rootPath, value.Name())
+			size := float64(getPathSize(path))
+			if size < delSize {
+				os.Remove(path)
+				delSize -= size
+			}
+		}
+	}
 }

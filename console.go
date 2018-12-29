@@ -3,7 +3,8 @@ package logger
 import "os"
 
 type baseLogger struct {
-	level int
+	level          int   // 日志级别
+	logFileMaxSize int64 // 默认日志文件最大值（单位: 字节）
 }
 
 type consoleLogger struct {
@@ -11,14 +12,27 @@ type consoleLogger struct {
 }
 
 func newConsoleLogger(level int) (logInterface, error) {
-	log := &consoleLogger{}
+	log := &consoleLogger{
+		baseLogger: baseLogger{
+			logFileMaxSize: splitFileSize,
+		},
+	}
 
 	log.setLevel(level)
 	return log, nil
 }
 
-func (c *consoleLogger) setLogFileMaxSize(size int64) {
+func (c *consoleLogger) getLogParam() (logLevel int, logFileMaxSize int64) {
+	logLevel, logFileMaxSize = c.level, c.logFileMaxSize
+	return
+}
 
+func (c *consoleLogger) setLogFileMaxSize(size int64) {
+	if size <= 0 {
+		size = splitFileSize
+	}
+
+	c.logFileMaxSize = size
 }
 
 func (c *consoleLogger) setLevel(level int) {

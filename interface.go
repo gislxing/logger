@@ -9,6 +9,9 @@ type logInterface interface {
 	// 默认大小 100MB
 	setLogFileMaxSize(size int64)
 
+	// 获得日志文件的配置信息
+	getLogParam() (logLevel int, logFileMaxSize int64)
+
 	debug(format string, args ...interface{})
 	trace(format string, args ...interface{})
 	info(format string, args ...interface{})
