@@ -26,7 +26,6 @@ func newFileLogger(level int) (logInterface, error) {
 		dataChan: make(chan *fileLogData, chanCacheSize),
 		baseLogger: baseLogger{
 			logFileMaxSize: splitFileSize,
-			logTotalSize:   logTotalSize,
 		},
 	}
 
@@ -202,7 +201,9 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 		f.createLogFile()
 
 		// 清理日志
-		go f.clearLogFile()
+		if f.logTotalSize > 0 {
+			go f.clearLogFile()
+		}
 	}
 
 }
