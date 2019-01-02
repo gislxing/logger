@@ -2,19 +2,18 @@ package logger
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type fileLogger struct {
 	baseLogger
-	infoFile     *os.File          // info及以下级别写入的文件
-	errFile      *os.File          // error及以上级别写入的文件
-	dataChan     chan *fileLogData // 写入文件通道
-	logTotalSize int64             // 日志总大小，大于该值则清理 30%
+	infoFile *os.File          // info及以下级别写入的文件
+	errFile  *os.File          // error及以上级别写入的文件
+	dataChan chan *fileLogData // 写入文件通道
 }
 
 type fileLogData struct {
@@ -24,10 +23,10 @@ type fileLogData struct {
 
 func newFileLogger(level int) (logInterface, error) {
 	log := &fileLogger{
-		dataChan:     make(chan *fileLogData, chanCacheSize),
-		logTotalSize: logTotalSize,
+		dataChan: make(chan *fileLogData, chanCacheSize),
 		baseLogger: baseLogger{
 			logFileMaxSize: splitFileSize,
+			logTotalSize:   logTotalSize,
 		},
 	}
 
@@ -40,8 +39,12 @@ func newFileLogger(level int) (logInterface, error) {
 	return log, nil
 }
 
-func (f *fileLogger) getLogParam() (logLevel int, logFileMaxSize int64) {
-	logLevel, logFileMaxSize = f.level, f.logFileMaxSize
+func (f *fileLogger) setLogTotalSize(size int64) {
+	f.logTotalSize = size
+}
+
+func (f *fileLogger) getLogParam() (logLevel int, logFileMaxSize int64, logTotalSize int64) {
+	logLevel, logFileMaxSize, logTotalSize = f.level, f.logFileMaxSize, f.logTotalSize
 	return
 }
 
@@ -80,7 +83,8 @@ func (f *fileLogger) createLogFile() {
 	// 日志 info 文件不存在则创建
 	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
-		panic(fmt.Sprintf("open log file failed: %v", err))
+		fmt.Printf("open log file failed: %v", err)
+		return
 	}
 
 	f.infoFile = file
@@ -92,7 +96,8 @@ func (f *fileLogger) createLogFile() {
 	// 日志 error 文件不存在则创建
 	file, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
-		panic(fmt.Sprintf("open log file failed: %v", err))
+		fmt.Printf("open log file failed: %v", err)
+		return
 	}
 
 	f.errFile = file
@@ -181,8 +186,17 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 	if f.logFileMaxSize <= currentFileSize {
 		timeStr := time.Now().Format("20060102150405")
 		newPath := strings.Replace(oldPath, ".log", "-"+timeStr+".log", -1)
-		f.close()
-		os.Rename(oldPath, newPath)
+
+		for i := 0; i < 5; i++ {
+			data.file.Close()
+			err := os.Rename(oldPath, newPath)
+			if err != nil {
+				// 重命名文件失败，则重试
+				continue
+			}
+
+			break
+		}
 
 		// 重新创建日志文件
 		f.createLogFile()
@@ -206,30 +220,8 @@ func (f *fileLogger) clearLogFile() {
 	}
 
 	// 从最早的日志开始清理
-	f.delete(rootPath, float64(f.logTotalSize)*perDeleteLog)
-}
-
-func (f *fileLogger) delete(rootPath string, delSize float64) {
-	if !isExists(rootPath) {
-		return
-	}
-
-	infos, err := ioutil.ReadDir(rootPath)
-	if err != nil {
-		return
-	}
-
-	for _, value := range infos {
-		if value.IsDir() {
-			f.delete(filepath.Join(rootPath, value.Name()), delSize)
-		} else {
-			// 如果当前文件小于 delSize 则删除
-			path := filepath.Join(rootPath, value.Name())
-			size := float64(getPathSize(path))
-			if size < delSize {
-				os.Remove(path)
-				delSize -= size
-			}
-		}
+	delSizeFloat := float64(f.logTotalSize) * perDeleteLog
+	if delSize, err := strconv.Atoi(fmt.Sprintf("%.0f", delSizeFloat)); err == nil {
+		delLog(rootPath, int64(delSize), f.logFileMaxSize)
 	}
 }

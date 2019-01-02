@@ -49,7 +49,7 @@ const (
 	splitFileSize = 100 * MB
 
 	// 默认日志总大小
-	logTotalSize = 10 * GB
+	logTotalSize = 100 * GB
 
 	// 默认清理日志百分比
 	perDeleteLog = 0.3

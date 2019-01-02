@@ -12,6 +12,10 @@ func init() {
 	log, _ = newConsoleLogger(DEBUG)
 }
 
+func SetLogTotalSize(size int64) {
+	log.setLogTotalSize(size)
+}
+
 // 设置日志输出级别，如果不设置则默认为 info 级别
 func SetLogLevel(level int) {
 	if level < DEBUG || level > FATAL {
@@ -26,24 +30,27 @@ func SetLogModel(model int) {
 	switch model {
 	case ConsoleModel:
 		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
-			logLevel, logFileMaxSize := log.getLogParam()
+			logLevel, logFileMaxSize, logTotalSize := log.getLogParam()
 			log, _ = newConsoleLogger(DEBUG)
 			log.setLevel(logLevel)
 			log.setLogFileMaxSize(logFileMaxSize)
+			log.setLogTotalSize(logTotalSize)
 		}
 	case FileModel:
 		if reflect.TypeOf(log) != reflect.TypeOf(&fileLogger{}) {
-			logLevel, logFileMaxSize := log.getLogParam()
+			logLevel, logFileMaxSize, logTotalSize := log.getLogParam()
 			log, _ = newFileLogger(DEBUG)
 			log.setLevel(logLevel)
 			log.setLogFileMaxSize(logFileMaxSize)
+			log.setLogTotalSize(logTotalSize)
 		}
 	default:
 		if reflect.TypeOf(log) != reflect.TypeOf(&consoleLogger{}) {
-			logLevel, logFileMaxSize := log.getLogParam()
+			logLevel, logFileMaxSize, logTotalSize := log.getLogParam()
 			log, _ = newConsoleLogger(DEBUG)
 			log.setLevel(logLevel)
 			log.setLogFileMaxSize(logFileMaxSize)
+			log.setLogTotalSize(logTotalSize)
 		}
 	}
 }
