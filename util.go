@@ -1,7 +1,9 @@
 package logger
 
 import (
+	"compress/gzip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -43,10 +45,16 @@ func output(file *os.File, dataChan chan *fileLogData, level int, format string,
 
 	msg := fmt.Sprintf(format, args...)
 
+	logType := createLogInfoFile
+	if level >= ERROR {
+		logType = createLogErrorFile
+	}
+
 	logMsg := fmt.Sprintf("%s [%5s] %s:%s %d - %s\n", timeStr, levelStr, fileName, funcName, lineNo, msg)
 	logData := &fileLogData{
-		log:  logMsg,
-		file: file,
+		log:     logMsg,
+		file:    file,
+		logType: logType,
 	}
 
 	if dataChan != nil {
@@ -256,4 +264,49 @@ func delLogFile(yearPath, month string, delSize *int64, maxFileSize int64) bool 
 	}
 
 	return true
+}
+
+// 压缩文件，支持文件夹压缩，压缩完成删除源文件
+// src 待压缩的文件
+// dest 压缩文件路径
+func CompressFile(src, dest string) error {
+	if !isExists(src) {
+		return fmt.Errorf("文件不存在: %s", src)
+	}
+
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	writer := gzip.NewWriter(destFile)
+	defer writer.Close()
+
+	srcFileInfo, err := srcFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	writer.Name = srcFileInfo.Name()
+
+	if _, err = io.Copy(writer, srcFile); err != nil {
+		return err
+	}
+
+	if err = writer.Flush(); err != nil {
+		return err
+	}
+
+	// 压缩完成后删除源文件
+	srcFile.Close()
+	os.Remove(src)
+
+	return nil
 }

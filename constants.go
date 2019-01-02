@@ -54,3 +54,9 @@ const (
 	// 默认清理日志百分比
 	perDeleteLog = 0.3
 )
+
+const (
+	createLogInfoFile  = iota // 只创建 info 日志文件
+	createLogErrorFile        // 只创建 error 日志文件
+	createLogAllFile          // 创建所有日志文件
+)
