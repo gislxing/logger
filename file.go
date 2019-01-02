@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -14,11 +15,13 @@ type fileLogger struct {
 	infoFile *os.File          // info及以下级别写入的文件
 	errFile  *os.File          // error及以上级别写入的文件
 	dataChan chan *fileLogData // 写入文件通道
+	mu       sync.Mutex
 }
 
 type fileLogData struct {
-	log  string   // 写入日志文件的内容
-	file *os.File // 写入的文件
+	log     string   // 写入日志文件的内容
+	file    *os.File // 写入的文件
+	logType int      // 日志类型0：info，1：error
 }
 
 func newFileLogger(level int) (logInterface, error) {
@@ -30,7 +33,8 @@ func newFileLogger(level int) (logInterface, error) {
 	}
 
 	log.setLevel(level)
-	log.createLogFile()
+	log.createLogFile(createLogInfoFile)
+	log.createLogFile(createLogErrorFile)
 
 	// 启动写入协程
 	go log.writerToFile()
@@ -59,14 +63,14 @@ func (f *fileLogger) setLogFileMaxSize(size int64) {
 func (f *fileLogger) writerToFile() {
 	for data := range f.dataChan {
 		// 切分日志
-		f.splitLogFile(data)
-
 		fmt.Fprintf(data.file, data.log)
+
+		f.splitLogFile(data)
 	}
 }
 
 // 创建日志文件
-func (f *fileLogger) createLogFile() {
+func (f *fileLogger) createLogFile(logType int) {
 	projectName := getProjectName()
 	logPath := getCurrentLogPath(false)
 
@@ -75,31 +79,33 @@ func (f *fileLogger) createLogFile() {
 		os.MkdirAll(logPath, os.ModePerm)
 	}
 
-	// 打开info级别日志文件（写入debug、trace、info、warn日志）
-	logFilePath := filepath.Join(logPath, projectName)
-	logFilePath = fmt.Sprintf("%s%s", logFilePath, ".log")
+	if logType == createLogInfoFile {
+		// 打开info级别日志文件（写入debug、trace、info、warn日志）
+		logFilePath := filepath.Join(logPath, projectName)
+		logFilePath = fmt.Sprintf("%s%s", logFilePath, ".log")
 
-	// 日志 info 文件不存在则创建
-	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		fmt.Printf("open log file failed: %v", err)
-		return
+		// 日志 info 文件不存在则创建
+		file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+		if err != nil {
+			fmt.Printf("open log file failed: %v", err)
+			return
+		}
+
+		f.infoFile = file
+	} else if logType == createLogErrorFile {
+		// 打开error级别日志文件(写入error、fatal日志)
+		logFilePath := filepath.Join(logPath, projectName)
+		logFilePath = fmt.Sprintf("%s%s", logFilePath, "-error.log")
+
+		// 日志 error 文件不存在则创建
+		file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+		if err != nil {
+			fmt.Printf("open log file failed: %v", err)
+			return
+		}
+
+		f.errFile = file
 	}
-
-	f.infoFile = file
-
-	// 打开error级别日志文件(写入error、fatal日志)
-	logFilePath = filepath.Join(logPath, projectName)
-	logFilePath = fmt.Sprintf("%s%s", logFilePath, "-error.log")
-
-	// 日志 error 文件不存在则创建
-	file, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		fmt.Printf("open log file failed: %v", err)
-		return
-	}
-
-	f.errFile = file
 }
 
 func (f *fileLogger) setLevel(level int) {
@@ -167,7 +173,7 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 	// 检查文件大小
 	fileInfo, err := data.file.Stat()
 	if err != nil {
-		f.createLogFile()
+		f.createLogFile(data.logType)
 		return
 	}
 
@@ -176,7 +182,7 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 	currentLogPath := filepath.Dir(oldPath)
 
 	if currentLogPath != getCurrentLogPath(false) {
-		f.createLogFile()
+		f.createLogFile(data.logType)
 		return
 	}
 
@@ -186,19 +192,16 @@ func (f *fileLogger) splitLogFile(data *fileLogData) {
 		timeStr := time.Now().Format("20060102150405")
 		newPath := strings.Replace(oldPath, ".log", "-"+timeStr+".log", -1)
 
-		for i := 0; i < 5; i++ {
-			data.file.Close()
-			err := os.Rename(oldPath, newPath)
-			if err != nil {
-				// 重命名文件失败，则重试
-				continue
-			}
-
-			break
-		}
+		// 切割文件
+		data.file.Close()
+		os.Rename(oldPath, newPath)
 
 		// 重新创建日志文件
-		f.createLogFile()
+		f.createLogFile(data.logType)
+
+		// 压缩文件
+		destPath := newPath + ".gz"
+		CompressFile(newPath, destPath)
 
 		// 清理日志
 		if f.logTotalSize > 0 {
