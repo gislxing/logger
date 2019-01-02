@@ -10,7 +10,7 @@ func TestFileLogger(t *testing.T) {
 	projectName := getProjectName()
 	logPath := filepath.Join("/var/log/", projectName)
 
-	log, err := newFileLogger(LogLevelDebug)
+	log, err := newFileLogger(DEBUG)
 	defer func() {
 		log.close()
 		os.RemoveAll(logPath)
@@ -38,7 +38,7 @@ func TestFileLogger(t *testing.T) {
 }
 
 func TestConsoleLogger(t *testing.T) {
-	log, err := newConsoleLogger(LogLevelDebug)
+	log, err := newConsoleLogger(DEBUG)
 	if err != nil {
 		t.Errorf("创建控制台日志错误: %v", err)
 	}
